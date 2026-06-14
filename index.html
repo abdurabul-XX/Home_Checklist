@@ -14,11 +14,14 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #080b12; font-family: system-ui, -apple-system, sans-serif; }
     ::-webkit-scrollbar { display: none; }
+    button { -webkit-tap-highlight-color: transparent; }
     .tab-btn  { cursor: pointer; background: none; border: none; font-family: inherit; }
     .done-btn { cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; }
     .done-btn:active { transform: scale(0.9); }
     .mode-btn { cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; }
     .mode-btn:active { transform: scale(0.95); }
+    .sec-btn  { cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; }
+    .sec-btn:active { transform: scale(0.97); }
     .card { transition: all 0.25s; }
   </style>
 </head>
@@ -67,14 +70,12 @@
       Household:"#60a5fa", HVAC:"#34d399",     Appliance:"#a78bfa",
       Structure:"#fbbf24", Plumbing:"#38bdf8", Safety:"#fb7185",
       Finance:"#4ade80",   Interior:"#e879f9", Warranty:"#f97316",
+      Cleaning:"#2dd4bf",  Pet:"#f472b6",      Kitchen:"#fde047",
     };
 
-    // ── TASKS ─────────────────────────────────────────────────────────────────
+    // ── MAINTENANCE TASKS ─────────────────────────────────────────────────────
     const T = [
-      // WEEKLY
-      {id:"w1",  name:"Laundry — clean lint trap after every load",          freq:7,   off:7,   s:HOME, fri:true, cat:"Household", r:'B', buy:0,  ef:1},
       // MONTHLY — Home
-      {id:"m1",  name:"Replace cat litter",                                  freq:30,  off:30,  s:HOME, cat:"Household", r:'B', buy:5,  bn:"Buy cat litter",           ef:1},
       {id:"m2",  name:"Replace Carrier furnace filter (monthly w/ cat)",     freq:30,  off:30,  s:HOME, cat:"HVAC",      r:'B', buy:7,  bn:"Buy furnace filter",       ef:1},
       {id:"m3",  name:"Clean dishwasher filter — Samsung DW80CG5451SR",      freq:30,  off:30,  s:HOME, cat:"Appliance", r:'B', buy:0,  ef:1},
       {id:"m4",  name:"Clean microwave grease filter — ME21DG6300SRAA",      freq:30,  off:30,  s:HOME, cat:"Appliance", r:'B', buy:0,  ef:1},
@@ -84,6 +85,8 @@
       {id:"m8",  name:"Check supply lines under sinks & laundry for drips",  freq:30,  off:30,  s:HOME, cat:"Plumbing",  r:'A', buy:0,  ef:1},
       {id:"m9",  name:"Clean garbage disposal",                              freq:30,  off:30,  s:HOME, cat:"Appliance", r:'B', buy:0,  ef:1},
       {id:"m10", name:"Confirm space rent posted — $1,495",                  freq:30,  off:9,   s:HOME, cat:"Finance",   r:'A', buy:0,  ef:1},
+      {id:"m11", name:"Test AFCI & GFCI outlets (manual: test monthly)",     freq:30,  off:30,  s:HOME, cat:"Safety",    r:'A', buy:0,  ef:1},
+      {id:"m12", name:"Check AC A-coil — corrosion/dust buildup",            freq:30,  off:30,  s:HOME, cat:"HVAC",      r:'A', buy:0,  ef:1},
       // MONTHLY — Washer/Dryer
       {id:"wm1", name:"Run washer tub clean cycle — GE GTW485ASWWB",         freq:30,  off:0,   s:WD,   cat:"Appliance", r:'B', buy:3,  bn:"Buy washer tub cleaner",   ef:1},
       {id:"wm2", name:"Wipe washer drum, lid & top edges — GTW485ASWWB",     freq:30,  off:0,   s:WD,   cat:"Appliance", r:'B', buy:0,  ef:1},
@@ -103,7 +106,6 @@
       {id:"q4",  name:"Inspect underbelly insulation at crawl access",       freq:91,  off:91,  s:HOME, cat:"Structure", r:'A', buy:0,  ef:2},
       {id:"q5",  name:"Clear skirting vents of leaves & debris",             freq:91,  off:91,  s:HOME, cat:"Structure", r:'A', buy:0,  ef:1},
       {id:"q6",  name:"Lubricate door hinges, locks & sliding hardware",     freq:91,  off:91,  s:HOME, cat:"Structure", r:'B', buy:0,  ef:1},
-      {id:"q7",  name:"Test all GFCI outlets",                               freq:91,  off:91,  s:HOME, cat:"Safety",    r:'A', buy:0,  ef:1},
       {id:"q8",  name:"Clean oven interior — Samsung NSG6DG8300SRAA",        freq:91,  off:91,  s:HOME, cat:"Appliance", r:'B', buy:0,  ef:1},
       {id:"q9",  name:"Check dual pane windows for fogging",                 freq:91,  off:91,  s:HOME, cat:"Structure", r:'A', buy:0,  ef:1},
       {id:"wq1", name:"Clean agitator post & underside — GTW485ASWWB",       freq:91,  off:30,  s:WD,   cat:"Appliance", r:'B', buy:0,  ef:1},
@@ -125,6 +127,11 @@
       {id:"ba10",name:"Inspect marriage wall seals inside",                  freq:182, off:182, s:HOME, cat:"Structure", r:'A', buy:0,  ef:2},
       {id:"ba11",name:"Check tie-down anchors — no rust or loosening",       freq:182, off:182, s:HOME, cat:"Structure", r:'A', buy:0,  ef:1},
       {id:"ba12",name:"Run dishwasher self-clean + descale — DW80CG5451SR",  freq:182, off:182, s:HOME, cat:"Appliance", r:'B', buy:5,  bn:"Buy dishwasher cleaner",   ef:1},
+      {id:"baAC",   name:"Check AC drain line — clear & draining properly",      freq:182, off:182, s:HOME, cat:"HVAC",     r:'A', buy:0,  ef:1},
+      {id:"baLock", name:"Check & tighten exterior door locks",                  freq:182, off:182, s:HOME, cat:"Safety",   r:'A', buy:0,  ef:1},
+      {id:"baAerator", name:"Clean faucet aerators — all sinks",                 freq:182, off:182, s:HOME, cat:"Plumbing", r:'B', buy:0,  ef:1},
+      {id:"baExt",  name:"Check fire extinguisher — inspect expiration date",    freq:182, off:182, s:HOME, cat:"Safety",   r:'A', buy:14, bn:"Check/replace fire extinguisher", ef:1},
+      {id:"baRoof2",name:"Inspect roof shingles/panels for damage",              freq:182, off:182, s:HOME, cat:"Structure",r:'A', buy:0,  ef:2},
       // ANNUAL
       {id:"a1",  name:"Check home leveling — doors sticking? Soft LVP?",    freq:365, off:365, s:HOME, cat:"Structure", r:'A', buy:0,  ef:2},
       {id:"a2",  name:"Full roof inspection — reseal caulk from sun",        freq:365, off:365, s:HOME, cat:"Structure", r:'A', buy:7,  bn:"Buy roof sealant",         ef:3},
@@ -137,11 +144,16 @@
       {id:"a9",  name:"Deep clean Samsung fridge — check door gaskets",      freq:365, off:365, s:HOME, cat:"Appliance", r:'B', buy:0,  ef:1},
       {id:"a10", name:"Inspect gas range igniters & clean grates",           freq:365, off:365, s:HOME, cat:"Appliance", r:'B', buy:0,  ef:2},
       {id:"a11", name:"Deep clean mini-split indoor unit — vanes & housing", freq:365, off:365, s:HOME, cat:"HVAC",      r:'B', buy:0,  ef:2},
-      {id:"a12", name:"Test Rheem water heater pressure relief valve",       freq:365, off:365, s:HOME, cat:"Plumbing",  r:'A', buy:0,  ef:1},
+      {id:"a12", name:"Test water heater pressure relief valve + verify temp ≤120°F (anti-scald)", freq:365, off:365, s:HOME, cat:"Plumbing", r:'A', buy:0, ef:1},
       {id:"wa1", name:"Inspect washer water supply hoses — GTW485ASWWB",     freq:365, off:335, s:WD,   cat:"Plumbing",  r:'A', buy:0,  ef:1},
       {id:"wa2", name:"Clean washer water inlet screens — GTW485ASWWB",      freq:365, off:335, s:WD,   cat:"Appliance", r:'B', buy:0,  ef:2},
       {id:"da1", name:"Check dryer gas connection — no smell/damage",        freq:365, off:335, s:WD,   cat:"Safety",    r:'A', buy:0,  ef:1},
       {id:"da2", name:"Inspect dryer exhaust vent exterior flap",            freq:365, off:335, s:WD,   cat:"Structure", r:'A', buy:0,  ef:1},
+      {id:"aBelly",  name:"Inspect belly board — no tears or openings (crawl access)", freq:365, off:365, s:HOME, cat:"Structure", r:'A', buy:0, ef:2},
+      {id:"aRidge",  name:"Inspect ridge vent — peaked center, no flat/dripping sections", freq:365, off:365, s:HOME, cat:"Structure", r:'A', buy:0, ef:2},
+      {id:"aCross",  name:"Check crossover connections — consult pro for any repairs", freq:365, off:365, s:HOME, cat:"Structure", r:'A', buy:0, ef:2},
+      {id:"aGutter", name:"Clean roof debris & check gutters/drip edges (if equipped)", freq:365, off:180, s:HOME, cat:"Structure", r:'B', buy:0, ef:2},
+      {id:"aWindowLube", name:"Lubricate window locks & mechanisms — graphite or silicone", freq:365, off:190, s:HOME, cat:"Structure", r:'B', buy:7, bn:"Buy graphite/silicone lubricant", ef:1},
       // 2 YEARS
       {id:"2y1", name:"Inspect/replace Rheem anode rod (first ~Nov 2027)",   freq:730, off:548, s:HOME, cat:"Plumbing",  r:'B', buy:14, bn:"Buy anode rod or schedule plumber", ef:2},
       {id:"2y2", name:"Professional re-leveling inspection",                 freq:730, off:730, s:HOME, cat:"Structure", r:'A', buy:14, bn:"Schedule leveling pro",    ef:3},
@@ -150,6 +162,37 @@
       {id:"2y5", name:"Review LVP floor — lifting edges or seam gaps",       freq:730, off:730, s:HOME, cat:"Interior",  r:'A', buy:0,  ef:2},
       {id:"2y6", name:"Mini-split refrigerant check — UXC24-36MSK3IH",       freq:730, off:730, s:HOME, cat:"HVAC",      r:'A', buy:14, bn:"Schedule AC pro",          ef:3},
     ];
+
+    // ── CHORES TASKS ──────────────────────────────────────────────────────────
+    const CHORES = [
+      // DAILY
+      {id:"d1", name:"Scoop litter",       freq:1, off:0, s:HOME, cat:"Pet",     r:'B', buy:0, ef:1, daily:true},
+      {id:"d2", name:"Wash dishes",        freq:1, off:0, s:HOME, cat:"Kitchen", r:'B', buy:0, ef:1, daily:true},
+      // WEEKLY
+      {id:"cw1", name:"Laundry — clean lint trap after every load",       freq:7, off:7, s:HOME, fri:true, cat:"Household", r:'B', buy:0, ef:1},
+      {id:"cw2", name:"Vacuum bedroom",                                   freq:7, off:7, s:HOME, cat:"Cleaning", r:'B', buy:0, ef:1},
+      {id:"cw3", name:"Vacuum common area",                               freq:7, off:7, s:HOME, cat:"Cleaning", r:'B', buy:0, ef:1},
+      {id:"cw4", name:"Mop LVP floors (dry/damp mop only — no steam)",    freq:7, off:7, s:HOME, cat:"Cleaning", r:'B', buy:0, ef:1},
+      {id:"cw5", name:"Clean stovetop & kitchen counters",                freq:7, off:7, s:HOME, cat:"Kitchen",  r:'B', buy:0, ef:1},
+      {id:"cw6", name:"Wipe down bathroom sink & mirror",                 freq:7, off:7, s:HOME, cat:"Cleaning", r:'B', buy:0, ef:1},
+      {id:"cw7", name:"Scrub toilet",                                     freq:7, off:7, s:HOME, cat:"Cleaning", r:'B', buy:0, ef:1},
+      {id:"cw8", name:"Take out trash & recycling",                       freq:7, off:7, s:HOME, cat:"Household", r:'B', buy:0, ef:1},
+      // BI-WEEKLY
+      {id:"cb1", name:"Change bed sheets",                                freq:14, off:14, s:HOME, cat:"Household", r:'B', buy:0, ef:1},
+      {id:"cb2", name:"Dust surfaces, ceiling fans & recessed lights",    freq:14, off:14, s:HOME, cat:"Cleaning",  r:'B', buy:0, ef:1},
+      {id:"cb3", name:"Clean bathroom shower/tub",                        freq:14, off:14, s:HOME, cat:"Cleaning",  r:'B', buy:0, ef:1},
+      {id:"cb4", name:"Wipe down appliance exteriors (fridge, microwave, range)", freq:14, off:14, s:HOME, cat:"Kitchen", r:'B', buy:0, ef:1},
+      {id:"cb5", name:"Clean interior windows & glass doors",             freq:14, off:14, s:HOME, cat:"Cleaning",  r:'B', buy:0, ef:1},
+      // MONTHLY
+      {id:"cm1", name:"Replace cat litter (full change)",                 freq:30, off:30, s:HOME, cat:"Pet",     r:'B', buy:5, bn:"Buy cat litter", ef:1},
+      {id:"cm2", name:"Deep clean bathroom (grout, baseboards, exhaust vent wipe)", freq:30, off:30, s:HOME, cat:"Cleaning", r:'B', buy:0, ef:2},
+      {id:"cm3", name:"Clean inside fridge",                              freq:30, off:30, s:HOME, cat:"Kitchen",  r:'B', buy:0, ef:2},
+      {id:"cm4", name:"Wipe down kitchen cabinets & drawer fronts",       freq:30, off:30, s:HOME, cat:"Kitchen",  r:'B', buy:0, ef:1},
+      {id:"cm5", name:"Clean interior of microwave",                      freq:30, off:30, s:HOME, cat:"Kitchen",  r:'B', buy:0, ef:1},
+      {id:"cm6", name:"Organize/declutter a zone",                        freq:30, off:30, s:HOME, cat:"Household",r:'B', buy:0, ef:2},
+    ];
+
+    const STATUS_STYLE_KEYS = ["done","overdue","due","upcoming"];
 
     // ── TASK CARD ─────────────────────────────────────────────────────────────
     function TaskCard({ task, date, today, flash, onDone, suggestion }) {
@@ -182,9 +225,16 @@
                 <span style={{
                   fontSize:10, fontWeight:(isOverdue||isToday)?600:400,
                   color:isDone?"#4ade80":isOverdue?"#f87171":isToday?"#60a5fa":"#64748b",
-                }}>{isDone ? "✓ Done!" : fmtRel(date, today)}</span>
-                {!isDone && <span style={{fontSize:10, color:"#2d3a4a"}}>· {fmtDate(date)}</span>}
-                {task.r==='B' && !isDone && (
+                }}>{isDone ? "✓ Done!" : (task.daily ? "Today" : fmtRel(date, today))}</span>
+                {!isDone && !task.daily && <span style={{fontSize:10, color:"#2d3a4a"}}>· {fmtDate(date)}</span>}
+                {!isDone && isOverdue && (
+                  <span style={{
+                    fontSize:8, fontWeight:700, letterSpacing:1, textTransform:"uppercase",
+                    color:"#fca5a5", background:"#7f1d1d40", border:"1px solid #7f1d1d",
+                    padding:"2px 6px", borderRadius:3,
+                  }}>⚠ Priority</span>
+                )}
+                {task.r==='B' && !isDone && !task.daily && (
                   <span style={{fontSize:8, color:"#1e3a5f", letterSpacing:1, textTransform:"uppercase"}}>resets</span>
                 )}
               </div>
@@ -223,6 +273,10 @@
     function App() {
       const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
       const [comps,   setComps]   = useState({});
+      const [log,     setLog]     = useState([]);
+      const [showLog, setShowLog] = useState(false);
+      const [logFilter, setLogFilter] = useState("all"); // 'all' | 'missed' | 'ontime'
+      const [section, setSection] = useState("maintenance"); // 'maintenance' | 'chores'
       const [tab,     setTab]     = useState("week");
       const [dayMode, setDayMode] = useState(null);
       const [flash,   setFlash]   = useState(null);
@@ -230,17 +284,24 @@
 
       useEffect(() => {
         try {
-          const saved = localStorage.getItem("ht-v6");
+          const saved = localStorage.getItem("ht-v7");
           if (saved) setComps(JSON.parse(saved));
+          const savedLog = localStorage.getItem("ht-log-v1");
+          if (savedLog) setLog(JSON.parse(savedLog));
         } catch {}
         setLoaded(true);
       }, []);
 
       const nextDue = useCallback((task) => {
+        if (task.daily) {
+          const last = comps[`${task.id}-last`];
+          let due = last ? addDays(new Date(last), task.freq) : addDays(task.s, task.off);
+          if (due < today) due = new Date(today);
+          return due;
+        }
         if (task.r === 'B') {
           const last = comps[`${task.id}-last`];
-          const base = last ? new Date(last) : addDays(task.s, task.off);
-          const raw  = last ? addDays(new Date(last), task.freq) : base;
+          const raw  = last ? addDays(new Date(last), task.freq) : addDays(task.s, task.off);
           return snapOff(raw, task.fri);
         }
         let raw = addDays(task.s, task.off);
@@ -250,30 +311,56 @@
           raw = addDays(raw, task.freq);
         }
         return null;
-      }, [comps]);
+      }, [comps, today]);
 
       const markDone = useCallback((task, dueDate) => {
         setFlash(task.id);
         setTimeout(() => setFlash(null), 700);
         const next = { ...comps };
-        if (task.r === 'B') {
+        if (task.r === 'B' || task.daily) {
           next[`${task.id}-last`] = toKey(today);
         } else {
           next[`${task.id}-${toKey(dueDate)}`] = true;
         }
         setComps(next);
-        try { localStorage.setItem("ht-v6", JSON.stringify(next)); } catch {}
-      }, [comps, today]);
+        try { localStorage.setItem("ht-v7", JSON.stringify(next)); } catch {}
+
+        // delta > 0 = completed late (missed) · delta === 0 = on time · delta < 0 = early
+        const delta = diffDays(dueDate, today);
+        const entry = {
+          ts: Date.now(),
+          taskId: task.id,
+          name: task.name,
+          cat: task.cat,
+          section,
+          scheduled: toKey(dueDate),
+          completed: toKey(today),
+          delta,
+        };
+        const newLog = [entry, ...log].slice(0, 500);
+        setLog(newLog);
+        try { localStorage.setItem("ht-log-v1", JSON.stringify(newLog)); } catch {}
+      }, [comps, today, log, section]);
+
+      const TASKS = section === "maintenance" ? T : CHORES;
 
       const allDues = useMemo(() =>
-        T.map(t => ({ t, date: nextDue(t) }))
-         .filter(x => x.date)
-         .sort((a, b) => a.date - b.date),
-      [nextDue]);
+        TASKS.map(t => ({ t, date: nextDue(t) }))
+             .filter(x => x.date)
+             .sort((a, b) => a.date - b.date),
+      [TASKS, nextDue]);
 
       const overdueCount = useMemo(() =>
         allDues.filter(x => diffDays(today, x.date) < 0).length,
       [allDues, today]);
+
+      const missedCount = useMemo(() => log.filter(e => e.delta > 0).length, [log]);
+
+      const filteredLog = useMemo(() => {
+        if (logFilter === "missed") return log.filter(e => e.delta > 0);
+        if (logFilter === "ontime") return log.filter(e => e.delta <= 0);
+        return log;
+      }, [log, logFilter]);
 
       const tabItems = useMemo(() => {
         const d = x => diffDays(today, x.date);
@@ -316,6 +403,11 @@
         {id:"buy",   label:"🛒 Buy",    count:counts.buy},
       ];
 
+      const SECTIONS = [
+        {id:"maintenance", label:"🔧 Maintenance", color:"#3b82f6"},
+        {id:"chores",      label:"🧹 Chores",       color:"#2dd4bf"},
+      ];
+
       return (
         <div style={{background:"#080b12", minHeight:"100vh", color:"#e2e8f0", paddingBottom:40}}>
           {/* HEADER */}
@@ -336,6 +428,20 @@
                 </div>
               </div>
               <div style={{display:"flex", flexDirection:"column", gap:5, alignItems:"flex-end"}}>
+                <button className="mode-btn" onClick={() => setShowLog(true)} style={{
+                  position:"relative", width:30, height:30, borderRadius:8,
+                  border:"1px solid #1e293b", background:"#0d1117",
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:14,
+                }}>
+                  📋
+                  {missedCount > 0 && (
+                    <span style={{
+                      position:"absolute", top:-5, right:-5, minWidth:15, height:15, borderRadius:8,
+                      background:"#ef4444", color:"#fff", fontSize:8, fontWeight:700,
+                      display:"flex", alignItems:"center", justifyContent:"center", padding:"0 3px",
+                    }}>{missedCount > 99 ? "99+" : missedCount}</span>
+                  )}
+                </button>
                 <div style={{fontSize:8, color:"#334155", letterSpacing:2, textTransform:"uppercase"}}>Today I'm</div>
                 <div style={{display:"flex", gap:5}}>
                   {[{id:"early",label:"Off Early"},{id:"off",label:"Full Day Off"}].map(m => (
@@ -352,6 +458,24 @@
                 </div>
               </div>
             </div>
+
+            {/* SECTION TOGGLE */}
+            <div style={{display:"flex", gap:6, marginBottom:10}}>
+              {SECTIONS.map(s => (
+                <button key={s.id} className="sec-btn"
+                  onClick={() => setSection(s.id)}
+                  style={{
+                    flex:1, padding:"9px 0", fontSize:12, fontWeight:700, letterSpacing:0.3,
+                    borderRadius:8, border:"1px solid",
+                    borderColor: section===s.id ? s.color : "#1a2232",
+                    background:  section===s.id ? `${s.color}14` : "#0a0d16",
+                    color:       section===s.id ? "#e2e8f0" : "#475569",
+                  }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
             {/* TABS */}
             <div style={{display:"flex"}}>
               {TABS.map(tb => (
@@ -419,6 +543,98 @@
               </div>
             )}
           </div>
+
+          {/* LOG OVERLAY */}
+          {showLog && (
+            <div style={{
+              position:"fixed", inset:0, background:"#080b12", zIndex:50,
+              display:"flex", flexDirection:"column",
+            }}>
+              <div style={{background:"#0d111a", borderBottom:"1px solid #1a2232", padding:"14px 16px"}}>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:9, color:"#334155", letterSpacing:3, textTransform:"uppercase", marginBottom:3}}>
+                      History
+                    </div>
+                    <div style={{fontSize:18, fontWeight:700, letterSpacing:-0.5}}>
+                      Completion Log
+                    </div>
+                  </div>
+                  <button className="mode-btn" onClick={() => setShowLog(false)} style={{
+                    width:32, height:32, borderRadius:8, border:"1px solid #1e293b",
+                    background:"#0d1117", color:"#94a3b8", fontSize:14,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                  }}>✕</button>
+                </div>
+                <div style={{display:"flex", gap:6}}>
+                  {[
+                    {id:"all",    label:`All (${log.length})`},
+                    {id:"missed", label:`⚠ Missed (${missedCount})`},
+                    {id:"ontime", label:`On time (${log.length - missedCount})`},
+                  ].map(f => (
+                    <button key={f.id} className="sec-btn" onClick={() => setLogFilter(f.id)} style={{
+                      flex:1, padding:"7px 0", fontSize:10, fontWeight:700, letterSpacing:0.3,
+                      borderRadius:8, border:"1px solid",
+                      borderColor: logFilter===f.id ? (f.id==="missed"?"#ef4444":"#3b82f6") : "#1a2232",
+                      background:  logFilter===f.id ? (f.id==="missed"?"#7f1d1d20":"#1e3a5f20") : "#0a0d16",
+                      color:       logFilter===f.id ? "#e2e8f0" : "#475569",
+                    }}>{f.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{flex:1, overflowY:"auto", padding:"10px 14px", maxWidth:640, margin:"0 auto", width:"100%"}}>
+                {filteredLog.length === 0 && (
+                  <div style={{textAlign:"center", padding:"60px 20px", color:"#334155"}}>
+                    <div style={{fontSize:32, marginBottom:10}}>📋</div>
+                    <div style={{fontSize:13}}>
+                      {log.length === 0
+                        ? "No history yet — completed tasks will appear here with full date details."
+                        : "Nothing in this filter."}
+                    </div>
+                  </div>
+                )}
+                {filteredLog.map(e => {
+                  const catColor = CAT[e.cat] || "#94a3b8";
+                  const isMissed = e.delta > 0;
+                  const isEarly  = e.delta < 0;
+                  const schedD = new Date(e.scheduled);
+                  const compD  = new Date(e.completed);
+                  return (
+                    <div key={e.ts} style={{
+                      background:"#0f1218",
+                      border:`1px solid ${isMissed?"#3a0a0a":"#1a2232"}`,
+                      borderLeft:`3px solid ${isMissed?"#ef4444":isEarly?"#34d399":"#22c55e"}`,
+                      borderRadius:10, padding:"10px 12px", marginBottom:8,
+                    }}>
+                      <div style={{display:"flex", alignItems:"center", gap:6, marginBottom:5, flexWrap:"wrap"}}>
+                        <span style={{fontSize:11}}>{e.section==="chores" ? "🧹" : "🔧"}</span>
+                        <span style={{
+                          fontSize:8, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase",
+                          color:catColor, background:`${catColor}18`, padding:"2px 6px", borderRadius:3,
+                        }}>{e.cat}</span>
+                        {isMissed ? (
+                          <span style={{
+                            fontSize:8, fontWeight:700, letterSpacing:1, textTransform:"uppercase",
+                            color:"#fca5a5", background:"#7f1d1d40", border:"1px solid #7f1d1d",
+                            padding:"2px 6px", borderRadius:3,
+                          }}>⚠ Priority · {e.delta}d late</span>
+                        ) : isEarly ? (
+                          <span style={{fontSize:10, color:"#34d399", fontWeight:600}}>{-e.delta}d early</span>
+                        ) : (
+                          <span style={{fontSize:10, color:"#4ade80", fontWeight:600}}>On time</span>
+                        )}
+                      </div>
+                      <div style={{fontSize:13, color:"#cbd5e1", lineHeight:1.4, marginBottom:5}}>{e.name}</div>
+                      <div style={{fontSize:10, color:"#475569"}}>
+                        Scheduled {fmtDate(schedD)} → Completed {fmtDate(compD)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
