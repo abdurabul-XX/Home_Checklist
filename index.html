@@ -333,8 +333,43 @@ const {
   useState,
   useEffect,
   useMemo,
-  useCallback
+  useCallback,
+  useRef
 } = React;
+
+// ── SUPABASE SYNC ─────────────────────────────────────────────────────────
+const SB_URL = "https://njjaffemgvahljcwsfsf.supabase.co";
+const SB_KEY = "sb_publishable_G-IBseddI6HhKz1LGtAcXA_YB9rnFgD";
+const SB_ROW = "main"; // single shared row id for this user's whole state
+const SB_ENDPOINT = SB_URL + "/rest/v1/tracker_state";
+const SB_HEADERS = {
+  "apikey": SB_KEY,
+  "Authorization": "Bearer " + SB_KEY,
+  "Content-Type": "application/json"
+};
+async function sbLoad() {
+  const res = await fetch(SB_ENDPOINT + "?id=eq." + SB_ROW + "&select=data", {
+    headers: SB_HEADERS
+  });
+  if (!res.ok) throw new Error("load " + res.status);
+  const rows = await res.json();
+  return rows.length ? rows[0].data : null;
+}
+async function sbSave(data) {
+  // upsert the single row
+  const res = await fetch(SB_ENDPOINT + "?on_conflict=id", {
+    method: "POST",
+    headers: Object.assign({}, SB_HEADERS, {
+      "Prefer": "resolution=merge-duplicates,return=minimal"
+    }),
+    body: JSON.stringify({
+      id: SB_ROW,
+      data,
+      updated_at: new Date().toISOString()
+    })
+  });
+  if (!res.ok) throw new Error("save " + res.status);
+}
 
 // ── DATES ─────────────────────────────────────────────────────────────────
 const HOME = new Date(2026, 4, 22); // May 22 — closing
@@ -2043,7 +2078,12 @@ function App() {
   const [dayMode, setDayMode] = useState(null);
   const [flash, setFlash] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [syncState, setSyncState] = useState("idle"); // idle | syncing | ok | offline
+  const saveTimer = useRef(null);
+
+  // Load: localStorage immediately (fast paint), then Supabase (authoritative)
   useEffect(() => {
+    // 1. instant local load
     try {
       const saved = localStorage.getItem("ht-v7");
       if (saved) setComps(JSON.parse(saved));
@@ -2053,6 +2093,49 @@ function App() {
       if (savedCustom) setCustom(JSON.parse(savedCustom));
     } catch {}
     setLoaded(true);
+
+    // 2. pull cloud state, override local if present
+    (async () => {
+      setSyncState("syncing");
+      try {
+        const cloud = await sbLoad();
+        if (cloud) {
+          if (cloud.comps) {
+            setComps(cloud.comps);
+            localStorage.setItem("ht-v7", JSON.stringify(cloud.comps));
+          }
+          if (cloud.log) {
+            setLog(cloud.log);
+            localStorage.setItem("ht-log-v1", JSON.stringify(cloud.log));
+          }
+          if (cloud.custom) {
+            setCustom(cloud.custom);
+            localStorage.setItem("ht-custom-v1", JSON.stringify(cloud.custom));
+          }
+        }
+        setSyncState("ok");
+      } catch (e) {
+        setSyncState("offline");
+      }
+    })();
+  }, []);
+
+  // Debounced cloud push whenever state changes (after initial load)
+  const pushCloud = useCallback((nextComps, nextLog, nextCustom) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setSyncState("syncing");
+    saveTimer.current = setTimeout(async () => {
+      try {
+        await sbSave({
+          comps: nextComps,
+          log: nextLog,
+          custom: nextCustom
+        });
+        setSyncState("ok");
+      } catch (e) {
+        setSyncState("offline");
+      }
+    }, 800);
   }, []);
   const nextDue = useCallback(task => {
     // custom tasks store start date as ISO string; normalize to Date
@@ -2111,7 +2194,8 @@ function App() {
     try {
       localStorage.setItem("ht-log-v1", JSON.stringify(newLog));
     } catch {}
-  }, [comps, today, log, section]);
+    pushCloud(next, newLog, custom);
+  }, [comps, today, log, section, custom, pushCloud]);
   const TASKS = useMemo(() => {
     const base = section === "maintenance" ? T : CHORES;
     const mine = custom.filter(c => c.section === section);
@@ -2123,15 +2207,17 @@ function App() {
     try {
       localStorage.setItem("ht-custom-v1", JSON.stringify(next));
     } catch {}
+    pushCloud(comps, log, next);
     setShowAdd(false);
-  }, [custom]);
+  }, [custom, comps, log, pushCloud]);
   const deleteCustomTask = useCallback(id => {
     const next = custom.filter(c => c.id !== id);
     setCustom(next);
     try {
       localStorage.setItem("ht-custom-v1", JSON.stringify(next));
     } catch {}
-  }, [custom]);
+    pushCloud(comps, log, next);
+  }, [custom, comps, log, pushCloud]);
   const exportData = useCallback(() => {
     const payload = {
       version: 1,
@@ -2169,13 +2255,14 @@ function App() {
           setCustom(data.custom);
           localStorage.setItem("ht-custom-v1", JSON.stringify(data.custom));
         }
+        pushCloud(data.comps || comps, data.log || log, data.custom || custom);
         alert("Backup imported successfully.");
       } catch (err) {
         alert("Could not read that file — make sure it's a Home Tracker backup JSON.");
       }
     };
     reader.readAsText(file);
-  }, []);
+  }, [comps, log, custom, pushCloud]);
   const allDues = useMemo(() => TASKS.map(t => ({
     t,
     date: nextDue(t)
@@ -2291,19 +2378,39 @@ function App() {
     style: {
       fontSize: 10,
       color: "#1e3a5f",
-      marginTop: 3
+      marginTop: 3,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      flexWrap: "wrap"
     }
-  }, today.toLocaleDateString("en-US", {
+  }, /*#__PURE__*/React.createElement("span", null, today.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric"
-  }), overdueCount > 0 && /*#__PURE__*/React.createElement("span", {
+  })), overdueCount > 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#ef4444",
-      marginLeft: 8,
       fontWeight: 600
     }
-  }, "· ", overdueCount, " overdue"))), /*#__PURE__*/React.createElement("div", {
+  }, "· ", overdueCount, " overdue"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4,
+      fontSize: 8,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      color: syncState === "ok" ? "#2dd4bf" : syncState === "syncing" ? "#fbbf24" : syncState === "offline" ? "#64748b" : "#334155"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      background: syncState === "ok" ? "#2dd4bf" : syncState === "syncing" ? "#fbbf24" : syncState === "offline" ? "#475569" : "#334155"
+    }
+  }), syncState === "ok" ? "Synced" : syncState === "syncing" ? "Syncing" : syncState === "offline" ? "Offline" : ""))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
