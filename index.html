@@ -340,7 +340,7 @@ const {
 // ── SUPABASE SYNC ─────────────────────────────────────────────────────────
 const SB_URL = "https://njjaffemgvahljcwsfsf.supabase.co";
 const SB_KEY = "sb_publishable_G-IBseddI6HhKz1LGtAcXA_YB9rnFgD";
-const SB_ROW = "main"; // single shared row id for this user's whole state
+const SB_ROW = "main";
 const SB_ENDPOINT = SB_URL + "/rest/v1/tracker_state";
 const SB_HEADERS = {
   "apikey": SB_KEY,
@@ -356,7 +356,6 @@ async function sbLoad() {
   return rows.length ? rows[0].data : null;
 }
 async function sbSave(data) {
-  // upsert the single row
   const res = await fetch(SB_ENDPOINT + "?on_conflict=id", {
     method: "POST",
     headers: Object.assign({}, SB_HEADERS, {
@@ -372,9 +371,8 @@ async function sbSave(data) {
 }
 
 // ── DATES ─────────────────────────────────────────────────────────────────
-const HOME = new Date(2026, 4, 22); // May 22 — closing
-const WD = new Date(2026, 5, 26); // Jun 26 — washer/dryer
-
+const HOME = new Date(2026, 4, 22);
+const WD = new Date(2026, 5, 26);
 const addDays = (d, n) => {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
@@ -401,17 +399,15 @@ function fmtDate(d) {
 }
 function fmtRel(d, today) {
   const n = diffDays(today, d);
-  if (n < -1) return `${Math.abs(n)}d overdue`;
+  if (n < -1) return Math.abs(n) + "d overdue";
   if (n === -1) return "Overdue";
   if (n === 0) return "Due today";
   if (n === 1) return "Tomorrow";
-  if (n <= 6) return `In ${n} days`;
+  if (n <= 6) return "In " + n + " days";
   if (n <= 13) return "Next week";
-  if (n <= 60) return `In ${n} days`;
-  return `In ${Math.ceil(n / 30)}mo`;
+  if (n <= 60) return "In " + n + " days";
+  return "In " + Math.ceil(n / 30) + "mo";
 }
-
-// ── CATEGORIES ────────────────────────────────────────────────────────────
 const CAT = {
   Household: "#60a5fa",
   HVAC: "#34d399",
@@ -426,11 +422,43 @@ const CAT = {
   Pet: "#f472b6",
   Kitchen: "#fde047"
 };
-
+const FREQ_PRESETS = [{
+  v: 1,
+  l: "Daily"
+}, {
+  v: 7,
+  l: "Weekly"
+}, {
+  v: 14,
+  l: "Bi-weekly"
+}, {
+  v: 30,
+  l: "Monthly"
+}, {
+  v: 61,
+  l: "Bi-monthly"
+}, {
+  v: 91,
+  l: "Quarterly"
+}, {
+  v: 122,
+  l: "Every 4 months"
+}, {
+  v: 182,
+  l: "Bi-annual"
+}, {
+  v: 365,
+  l: "Annual"
+}, {
+  v: 730,
+  l: "Every 2 years"
+}];
+function freqLabel(n) {
+  const p = FREQ_PRESETS.find(x => x.v === n);
+  return p ? p.l : "Every " + n + " days";
+}
 // ── MAINTENANCE TASKS ─────────────────────────────────────────────────────
-const T = [
-// MONTHLY — Home
-{
+const T = [{
   id: "m2",
   name: "Replace Carrier furnace filter (monthly w/ cat)",
   freq: 30,
@@ -463,7 +491,7 @@ const T = [
   r: 'B',
   buy: 0,
   ef: 1,
-  detail: "Metal mesh grease filter (~5×7⅝ in), underside of microwave. Slide tab to release. Hand-wash or top-rack dishwasher."
+  detail: "Metal mesh grease filter (8¾ × 4 × ¼ in), underside of microwave. Slide tab to release. Hand-wash or top-rack dishwasher."
 }, {
   id: "m5",
   name: "Check skirting panels — gaps, damage, pest entry",
@@ -476,7 +504,7 @@ const T = [
   ef: 1
 }, {
   id: "m6",
-  name: "Inspect crawl space access panel (visual)",
+  name: "Inspect crawl space access panel — moisture, pests",
   freq: 30,
   off: 30,
   s: HOME,
@@ -493,7 +521,8 @@ const T = [
   cat: "Safety",
   r: 'A',
   buy: 0,
-  ef: 1
+  ef: 1,
+  detail: "Hold TEST button 5-10s until siren sounds. Tests horn + battery only, not sensor. Note expiry: smoke ~10yr, CO ~5-7yr."
 }, {
   id: "m8",
   name: "Check supply lines under sinks & laundry for drips",
@@ -546,9 +575,7 @@ const T = [
   r: 'A',
   buy: 0,
   ef: 1
-},
-// MONTHLY — Washer/Dryer
-{
+}, {
   id: "wm1",
   name: "Run washer tub clean cycle — GE GTW485ASWWB",
   freq: 30,
@@ -580,9 +607,7 @@ const T = [
   r: 'B',
   buy: 0,
   ef: 1
-},
-// BI-MONTHLY
-{
+}, {
   id: "bm1",
   name: "Inspect Hardiboard siding — chips, cracks, paint",
   freq: 61,
@@ -653,9 +678,7 @@ const T = [
   r: 'A',
   buy: 0,
   ef: 1
-},
-// QUARTERLY
-{
+}, {
   id: "q1",
   name: "Clean fridge coils — Samsung RF27CG5400SR",
   freq: 91,
@@ -748,9 +771,7 @@ const T = [
   buy: 0,
   ef: 1,
   detail: "Lift agitator cap, wipe post and under-cap. Build-up causes odor. GE GTW485ASWWB agitator model."
-},
-// EVERY 4 MONTHS
-{
+}, {
   id: "e1",
   name: "Caulk new exterior gaps (windows, doors)",
   freq: 122,
@@ -791,9 +812,7 @@ const T = [
   r: 'A',
   buy: 0,
   ef: 1
-},
-// BI-ANNUAL
-{
+}, {
   id: "ba1",
   name: "Carrier furnace professional service",
   freq: 182,
@@ -973,9 +992,7 @@ const T = [
   r: 'A',
   buy: 0,
   ef: 2
-},
-// ANNUAL
-{
+}, {
   id: "a1",
   name: "Check home leveling — doors sticking? Soft LVP?",
   freq: 365,
@@ -1094,7 +1111,7 @@ const T = [
   ef: 2
 }, {
   id: "a12",
-  name: "Test water heater pressure relief valve + verify temp ≤120°F (anti-scald)",
+  name: "Test water heater pressure relief valve + temp ≤120°F",
   freq: 365,
   off: 365,
   s: HOME,
@@ -1145,7 +1162,7 @@ const T = [
   ef: 1
 }, {
   id: "aBelly",
-  name: "Inspect belly board — no tears or openings (crawl access)",
+  name: "Inspect belly board — no tears or openings",
   freq: 365,
   off: 365,
   s: HOME,
@@ -1155,7 +1172,7 @@ const T = [
   ef: 2
 }, {
   id: "aRidge",
-  name: "Inspect ridge vent — peaked center, no flat/dripping sections",
+  name: "Inspect ridge vent — peaked center, no flat spots",
   freq: 365,
   off: 365,
   s: HOME,
@@ -1165,7 +1182,7 @@ const T = [
   ef: 2
 }, {
   id: "aCross",
-  name: "Check crossover connections — consult pro for any repairs",
+  name: "Check crossover connections — consult pro if needed",
   freq: 365,
   off: 365,
   s: HOME,
@@ -1175,7 +1192,7 @@ const T = [
   ef: 2
 }, {
   id: "aGutter",
-  name: "Clean roof debris & check gutters/drip edges (if equipped)",
+  name: "Clean roof debris & check gutters/drip edges",
   freq: 365,
   off: 180,
   s: HOME,
@@ -1185,7 +1202,7 @@ const T = [
   ef: 2
 }, {
   id: "aWindowLube",
-  name: "Lubricate window locks & mechanisms — graphite or silicone",
+  name: "Lubricate window locks & mechanisms",
   freq: 365,
   off: 190,
   s: HOME,
@@ -1194,9 +1211,7 @@ const T = [
   buy: 7,
   bn: "Buy graphite/silicone lubricant",
   ef: 1
-},
-// 2 YEARS
-{
+}, {
   id: "2y1",
   name: "Inspect/replace Rheem anode rod (first ~Nov 2027)",
   freq: 730,
@@ -1265,9 +1280,7 @@ const T = [
 }];
 
 // ── CHORES TASKS ──────────────────────────────────────────────────────────
-const CHORES = [
-// DAILY
-{
+const CHORES = [{
   id: "d1",
   name: "Scoop litter",
   freq: 1,
@@ -1289,9 +1302,7 @@ const CHORES = [
   buy: 0,
   ef: 1,
   daily: true
-},
-// WEEKLY
-{
+}, {
   id: "cw1",
   name: "Laundry — clean lint trap after every load",
   freq: 7,
@@ -1331,7 +1342,8 @@ const CHORES = [
   cat: "Cleaning",
   r: 'B',
   buy: 0,
-  ef: 1
+  ef: 1,
+  detail: "LVP is steam-sensitive. No Pine-Sol, Fabuloso, or steam mop. Diluted white vinegar is safe."
 }, {
   id: "cw5",
   name: "Clean stovetop & kitchen counters",
@@ -1341,7 +1353,8 @@ const CHORES = [
   cat: "Kitchen",
   r: 'B',
   buy: 0,
-  ef: 1
+  ef: 1,
+  detail: "Quartz counters: no Windex or abrasives. Mild soap + water only."
 }, {
   id: "cw6",
   name: "Wipe down bathroom sink & mirror",
@@ -1372,9 +1385,7 @@ const CHORES = [
   r: 'B',
   buy: 0,
   ef: 1
-},
-// BI-WEEKLY
-{
+}, {
   id: "cb1",
   name: "Change bed sheets",
   freq: 14,
@@ -1406,7 +1417,7 @@ const CHORES = [
   ef: 1
 }, {
   id: "cb4",
-  name: "Wipe down appliance exteriors (fridge, microwave, range)",
+  name: "Wipe down appliance exteriors",
   freq: 14,
   off: 14,
   s: HOME,
@@ -1424,9 +1435,7 @@ const CHORES = [
   r: 'B',
   buy: 0,
   ef: 1
-},
-// MONTHLY
-{
+}, {
   id: "cm1",
   name: "Replace cat litter (full change)",
   freq: 30,
@@ -1439,7 +1448,7 @@ const CHORES = [
   ef: 1
 }, {
   id: "cm2",
-  name: "Deep clean bathroom (grout, baseboards, exhaust vent wipe)",
+  name: "Deep clean bathroom (grout, baseboards, vent)",
   freq: 30,
   off: 30,
   s: HOME,
@@ -1488,7 +1497,32 @@ const CHORES = [
   buy: 0,
   ef: 2
 }];
-const STATUS_STYLE_KEYS = ["done", "overdue", "due", "upcoming"];
+const STATUS = {
+  done: {
+    bg: "#0d2010",
+    bd: "#1a4a1a",
+    lb: "#22c55e",
+    tx: "#4ade80"
+  },
+  overdue: {
+    bg: "#1a0a0a",
+    bd: "#3a0a0a",
+    lb: "#ef4444",
+    tx: "#f87171"
+  },
+  today: {
+    bg: "#0c1423",
+    bd: "#1e3a5f",
+    lb: "#3b82f6",
+    tx: "#60a5fa"
+  },
+  up: {
+    bg: "#0f1218",
+    bd: "#1a2232",
+    lb: null,
+    tx: "#64748b"
+  }
+};
 
 // ── TASK CARD ─────────────────────────────────────────────────────────────
 function TaskCard({
@@ -1497,24 +1531,23 @@ function TaskCard({
   today,
   flash,
   onDone,
-  suggestion,
-  onDelete
+  suggestion
 }) {
   const daysAway = diffDays(today, date);
-  const isOverdue = daysAway < 0;
-  const isToday = daysAway === 0;
-  const isDone = flash === task.id;
+  const isOverdue = daysAway < 0,
+    isToday = daysAway === 0,
+    isDone = flash === task.id;
   const catColor = CAT[task.cat] || "#94a3b8";
   const buyBy = task.buy > 0 ? addDays(date, -task.buy) : null;
   const showBuy = task.buy > 0 && daysAway >= 0 && daysAway <= task.buy + 7;
-  const borderLeft = isDone ? "#22c55e" : isOverdue ? "#ef4444" : isToday ? "#3b82f6" : suggestion ? "#334155" : catColor;
-  const bg = isDone ? "#0d2010" : isOverdue ? "#1a0a0a" : isToday ? "#0c1423" : "#0f1218";
+  const st = isDone ? STATUS.done : isOverdue ? STATUS.overdue : isToday ? STATUS.today : STATUS.up;
+  const lb = isDone ? "#22c55e" : isOverdue ? "#ef4444" : isToday ? "#3b82f6" : suggestion ? "#334155" : catColor;
   return /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
-      background: bg,
-      border: `1px solid ${isDone ? "#1a4a1a" : isOverdue ? "#3a0a0a" : isToday ? "#1e3a5f" : "#1a2232"}`,
-      borderLeft: `3px solid ${borderLeft}`,
+      background: st.bg,
+      border: "1px solid " + st.bd,
+      borderLeft: "3px solid " + lb,
       borderRadius: 10,
       padding: "12px 12px 12px 14px",
       marginBottom: 8,
@@ -1546,7 +1579,7 @@ function TaskCard({
       letterSpacing: 1.5,
       textTransform: "uppercase",
       color: catColor,
-      background: `${catColor}18`,
+      background: catColor + "18",
       padding: "2px 6px",
       borderRadius: 3,
       whiteSpace: "nowrap"
@@ -1562,26 +1595,21 @@ function TaskCard({
       fontSize: 10,
       color: "#2d3a4a"
     }
-  }, "· ", fmtDate(date)), !isDone && isOverdue && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 8,
-      fontWeight: 700,
-      letterSpacing: 1,
-      textTransform: "uppercase",
-      color: "#fca5a5",
-      background: "#7f1d1d40",
-      border: "1px solid #7f1d1d",
-      padding: "2px 6px",
-      borderRadius: 3
-    }
-  }, "⚠ Priority"), task.r === 'B' && !isDone && !task.daily && /*#__PURE__*/React.createElement("span", {
+  }, "· ", fmtDate(date)), task.r === 'B' && !isDone && !task.daily && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 8,
       color: "#1e3a5f",
       letterSpacing: 1,
       textTransform: "uppercase"
     }
-  }, "resets")), /*#__PURE__*/React.createElement("div", {
+  }, "resets"), task.custom && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 8,
+      color: "#5b6b7f",
+      letterSpacing: 1,
+      textTransform: "uppercase"
+    }
+  }, "custom")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: isDone ? "#4ade8080" : "#cbd5e1",
@@ -1621,127 +1649,68 @@ function TaskCard({
       color: "#f87171",
       fontWeight: 600
     }
-  }, "— buy now"))), !isDone && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-      alignItems: "center",
-      flexShrink: 0
-    }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, "— buy now"))), !isDone && /*#__PURE__*/React.createElement("button", {
     className: "done-btn",
     onClick: () => onDone(task, date),
     style: {
       width: 40,
       height: 40,
       borderRadius: 20,
+      flexShrink: 0,
       background: isToday ? "#1e3a5f" : "#0d1117",
-      border: `1.5px solid ${isToday ? "#3b82f6" : "#1e293b"}`,
+      border: "1.5px solid " + (isToday ? "#3b82f6" : "#1e293b"),
       color: isToday ? "#60a5fa" : "#334155",
       fontSize: 18,
       display: "flex",
       alignItems: "center",
       justifyContent: "center"
     }
-  }, "○"), onDelete && /*#__PURE__*/React.createElement("button", {
-    className: "done-btn",
-    onClick: () => {
-      if (confirm("Delete this custom task?")) onDelete(task.id);
-    },
-    style: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      background: "transparent",
-      border: "1px solid #3a1a1a",
-      color: "#7f4a4a",
-      fontSize: 11,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }
-  }, "✕"))));
+  }, "○")));
 }
-
-// ── ADD TASK FORM ─────────────────────────────────────────────────────────
-function AddTaskForm({
+// ── EDIT / ADD TASK FORM ──────────────────────────────────────────────────
+// mode: "add" creates a custom task; "edit" produces an override patch (or edits a custom task)
+function EditTaskForm({
   section,
+  existing,
+  isBuiltin,
   onSave,
+  onReset,
   onClose
 }) {
   const todayISO = new Date().toISOString().slice(0, 10);
-  const [name, setName] = useState("");
-  const [detail, setDetail] = useState("");
-  const [start, setStart] = useState(todayISO);
-  const [freqPreset, setFreqPreset] = useState("30");
-  const [customFreq, setCustomFreq] = useState("");
-  const [cat, setCat] = useState(section === "chores" ? "Cleaning" : "Appliance");
-  const [reset, setReset] = useState("B");
-  const [ef, setEf] = useState("1");
-  const [buy, setBuy] = useState("0");
-  const [bn, setBn] = useState("");
-  const [daily, setDaily] = useState(false);
-  const [snap, setSnap] = useState(true);
-  const FREQ_OPTIONS = [{
-    v: "1",
-    l: "Daily"
-  }, {
-    v: "7",
-    l: "Weekly"
-  }, {
-    v: "14",
-    l: "Bi-weekly"
-  }, {
-    v: "30",
-    l: "Monthly"
-  }, {
-    v: "61",
-    l: "Bi-monthly"
-  }, {
-    v: "91",
-    l: "Quarterly"
-  }, {
-    v: "122",
-    l: "Every 4 months"
-  }, {
-    v: "182",
-    l: "Bi-annual"
-  }, {
-    v: "365",
-    l: "Annual"
-  }, {
-    v: "730",
-    l: "Every 2 years"
-  }, {
-    v: "custom",
-    l: "Custom (days)…"
-  }];
+  const startISO = existing && existing.s ? typeof existing.s === "string" ? existing.s : new Date(existing.s).toISOString().slice(0, 10) : todayISO;
+  const [name, setName] = useState(existing ? existing.name : "");
+  const [detail, setDetail] = useState(existing && existing.detail ? existing.detail : "");
+  const [start, setStart] = useState(startISO);
+  const knownFreq = existing ? FREQ_PRESETS.some(p => p.v === existing.freq) : true;
+  const [freqPreset, setFreqPreset] = useState(existing ? knownFreq ? String(existing.freq) : "custom" : "30");
+  const [customFreq, setCustomFreq] = useState(existing && !knownFreq ? String(existing.freq) : "");
+  const [cat, setCat] = useState(existing ? existing.cat : section === "chores" ? "Cleaning" : "Appliance");
+  const [reset, setReset] = useState(existing ? existing.r : "B");
+  const [ef, setEf] = useState(existing ? String(existing.ef || 1) : "1");
+  const [buy, setBuy] = useState(existing ? String(existing.buy || 0) : "0");
+  const [bn, setBn] = useState(existing && existing.bn ? existing.bn : "");
+  const [daily, setDaily] = useState(existing ? !!existing.daily : false);
   const catKeys = Object.keys(CAT);
   const canSave = name.trim().length > 0;
+  const editingTitle = existing ? isBuiltin ? "Edit task" : "Edit custom task" : "Add task";
   const handleSave = () => {
     if (!canSave) return;
     const freq = freqPreset === "custom" ? Math.max(1, parseInt(customFreq || "30", 10)) : parseInt(freqPreset, 10);
     const isDaily = daily || freq === 1;
-    const task = {
-      id: "u" + Date.now().toString(36),
+    const patch = {
       name: name.trim(),
       detail: detail.trim() || undefined,
       freq,
-      off: 0,
       s: start,
-      // ISO string; normalized at read time
       cat,
       r: reset,
       buy: parseInt(buy || "0", 10),
       bn: bn.trim() || undefined,
-      ef: parseInt(ef, 10),
-      section,
-      custom: true
+      ef: parseInt(ef, 10)
     };
-    if (isDaily) task.daily = true;
-    if (!snap && !isDaily) task.noSnap = true;
-    onSave(task);
+    if (isDaily) patch.daily = true;
+    onSave(patch);
   };
   const lbl = {
     fontSize: 10,
@@ -1763,7 +1732,7 @@ function AddTaskForm({
     fontFamily: "inherit",
     outline: "none"
   };
-  const fieldWrap = {
+  const fw = {
     marginBottom: 16
   };
   return /*#__PURE__*/React.createElement("div", {
@@ -1771,7 +1740,7 @@ function AddTaskForm({
       position: "fixed",
       inset: 0,
       background: "#080b12",
-      zIndex: 60,
+      zIndex: 70,
       display: "flex",
       flexDirection: "column"
     }
@@ -1792,13 +1761,13 @@ function AddTaskForm({
       textTransform: "uppercase",
       marginBottom: 3
     }
-  }, "New ", section === "chores" ? "Chore" : "Maintenance Task"), /*#__PURE__*/React.createElement("div", {
+  }, section === "chores" ? "Chore" : "Maintenance"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 18,
       fontWeight: 700,
       letterSpacing: -0.5
     }
-  }, "Add Task")), /*#__PURE__*/React.createElement("button", {
+  }, editingTitle)), /*#__PURE__*/React.createElement("button", {
     className: "mode-btn",
     onClick: onClose,
     style: {
@@ -1822,8 +1791,19 @@ function AddTaskForm({
       margin: "0 auto",
       width: "100%"
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: fieldWrap
+  }, isBuiltin && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#5b6b7f",
+      background: "#0c1423",
+      border: "1px solid #1a2738",
+      borderRadius: 8,
+      padding: "9px 11px",
+      marginBottom: 16,
+      lineHeight: 1.5
+    }
+  }, "Built-in task. Your edits are saved as an override; the original is never lost. Use \"Reset to original\" to undo all changes."), /*#__PURE__*/React.createElement("div", {
+    style: fw
   }, /*#__PURE__*/React.createElement("label", {
     style: lbl
   }, "Task name *"), /*#__PURE__*/React.createElement("input", {
@@ -1832,18 +1812,18 @@ function AddTaskForm({
     onChange: e => setName(e.target.value),
     placeholder: "e.g. Replace bedroom AC filter"
   })), /*#__PURE__*/React.createElement("div", {
-    style: fieldWrap
+    style: fw
   }, /*#__PURE__*/React.createElement("label", {
     style: lbl
   }, "Details / spec / directions"), /*#__PURE__*/React.createElement("textarea", {
     style: {
       ...inp,
-      minHeight: 64,
+      minHeight: 70,
       resize: "vertical"
     },
     value: detail,
     onChange: e => setDetail(e.target.value),
-    placeholder: "e.g. Filter 20×20×1, slot behind return grille. Vacuum first."
+    placeholder: "e.g. Filter 20×20×1, behind return grille."
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -1851,7 +1831,7 @@ function AddTaskForm({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      ...fieldWrap,
+      ...fw,
       flex: 1
     }
   }, /*#__PURE__*/React.createElement("label", {
@@ -1863,7 +1843,7 @@ function AddTaskForm({
     onChange: e => setStart(e.target.value)
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      ...fieldWrap,
+      ...fw,
       flex: 1
     }
   }, /*#__PURE__*/React.createElement("label", {
@@ -1876,17 +1856,19 @@ function AddTaskForm({
     key: k,
     value: k
   }, k))))), /*#__PURE__*/React.createElement("div", {
-    style: fieldWrap
+    style: fw
   }, /*#__PURE__*/React.createElement("label", {
     style: lbl
   }, "Frequency"), /*#__PURE__*/React.createElement("select", {
     style: inp,
     value: freqPreset,
     onChange: e => setFreqPreset(e.target.value)
-  }, FREQ_OPTIONS.map(o => /*#__PURE__*/React.createElement("option", {
+  }, FREQ_PRESETS.map(o => /*#__PURE__*/React.createElement("option", {
     key: o.v,
-    value: o.v
-  }, o.l))), freqPreset === "custom" && /*#__PURE__*/React.createElement("input", {
+    value: String(o.v)
+  }, o.l)), /*#__PURE__*/React.createElement("option", {
+    value: "custom"
+  }, "Custom (days)…")), freqPreset === "custom" && /*#__PURE__*/React.createElement("input", {
     style: {
       ...inp,
       marginTop: 8
@@ -1895,9 +1877,9 @@ function AddTaskForm({
     min: "1",
     value: customFreq,
     onChange: e => setCustomFreq(e.target.value),
-    placeholder: "Number of days between occurrences"
+    placeholder: "Days between occurrences"
   })), /*#__PURE__*/React.createElement("div", {
-    style: fieldWrap
+    style: fw
   }, /*#__PURE__*/React.createElement("label", {
     style: lbl
   }, "Reset behavior"), /*#__PURE__*/React.createElement("div", {
@@ -1908,11 +1890,11 @@ function AddTaskForm({
   }, [{
     v: "B",
     t: "From completion",
-    d: "Reschedules from the day you finish (filters, cleaning)"
+    d: "Reschedules from the day you finish"
   }, {
     v: "A",
     t: "Fixed schedule",
-    d: "Stays on calendar dates (inspections, rent)"
+    d: "Stays on calendar dates"
   }].map(o => /*#__PURE__*/React.createElement("button", {
     key: o.v,
     className: "sec-btn",
@@ -1922,8 +1904,7 @@ function AddTaskForm({
       textAlign: "left",
       padding: "10px",
       borderRadius: 8,
-      border: "1px solid",
-      borderColor: reset === o.v ? "#3b82f6" : "#1a2232",
+      border: "1px solid " + (reset === o.v ? "#3b82f6" : "#1a2232"),
       background: reset === o.v ? "#1e3a5f20" : "#0a0d16",
       cursor: "pointer"
     }
@@ -1947,24 +1928,24 @@ function AddTaskForm({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      ...fieldWrap,
+      ...fw,
       flex: 1
     }
   }, /*#__PURE__*/React.createElement("label", {
     style: lbl
-  }, "Effort (for off-day suggestions)"), /*#__PURE__*/React.createElement("select", {
+  }, "Effort"), /*#__PURE__*/React.createElement("select", {
     style: inp,
     value: ef,
     onChange: e => setEf(e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
     value: "1"
-  }, "Quick (<30 min)"), /*#__PURE__*/React.createElement("option", {
+  }, "Quick (<30m)"), /*#__PURE__*/React.createElement("option", {
     value: "2"
-  }, "Medium (30–90 min)"), /*#__PURE__*/React.createElement("option", {
+  }, "Medium (30-90m)"), /*#__PURE__*/React.createElement("option", {
     value: "3"
-  }, "Heavy / pro needed"))), /*#__PURE__*/React.createElement("div", {
+  }, "Heavy / pro"))), /*#__PURE__*/React.createElement("div", {
     style: {
-      ...fieldWrap,
+      ...fw,
       flex: 1
     }
   }, /*#__PURE__*/React.createElement("label", {
@@ -1977,7 +1958,7 @@ function AddTaskForm({
     onChange: e => setBuy(e.target.value),
     placeholder: "0"
   }))), parseInt(buy || "0", 10) > 0 && /*#__PURE__*/React.createElement("div", {
-    style: fieldWrap
+    style: fw
   }, /*#__PURE__*/React.createElement("label", {
     style: lbl
   }, "Buy reminder text"), /*#__PURE__*/React.createElement("input", {
@@ -1985,40 +1966,35 @@ function AddTaskForm({
     value: bn,
     onChange: e => setBn(e.target.value),
     placeholder: "e.g. Buy 20×20×1 filter 2-pack"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      ...fieldWrap,
-      display: "flex",
-      gap: 16,
-      flexWrap: "wrap"
-    }
-  }, /*#__PURE__*/React.createElement("label", {
+  })), /*#__PURE__*/React.createElement("label", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 8,
       fontSize: 12,
       color: "#94a3b8",
-      cursor: "pointer"
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: snap,
-    onChange: e => setSnap(e.target.checked)
-  }), "Snap to days off (Thu/Fri/Sat)"), /*#__PURE__*/React.createElement("label", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      fontSize: 12,
-      color: "#94a3b8",
-      cursor: "pointer"
+      cursor: "pointer",
+      marginBottom: 16
     }
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
     checked: daily,
     onChange: e => setDaily(e.target.checked)
-  }), "Show every day"))), /*#__PURE__*/React.createElement("div", {
+  }), " Show every day (daily task)"), isBuiltin && onReset && /*#__PURE__*/React.createElement("button", {
+    className: "sec-btn",
+    onClick: onReset,
+    style: {
+      width: "100%",
+      padding: "11px",
+      borderRadius: 10,
+      border: "1px solid #3a2a0a",
+      background: "#1a1305",
+      color: "#fbbf24",
+      fontSize: 12,
+      fontWeight: 600,
+      marginBottom: 4
+    }
+  }, "↺ Reset to original (undo all edits)")), /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: "1px solid #1a2232",
       padding: "12px 16px",
@@ -2049,17 +2025,271 @@ function AddTaskForm({
       flex: 2,
       padding: "13px",
       borderRadius: 10,
-      border: "1px solid",
-      borderColor: canSave ? "#3b82f6" : "#1a2232",
+      border: "1px solid " + (canSave ? "#3b82f6" : "#1a2232"),
       background: canSave ? "#1e3a5f" : "#0a0d16",
       color: canSave ? "#fff" : "#334155",
       fontSize: 14,
       fontWeight: 700,
       cursor: canSave ? "pointer" : "default"
     }
-  }, "Add Task")));
+  }, existing ? "Save changes" : "Add task")));
 }
-
+// ── MANAGE TASKS PANEL ────────────────────────────────────────────────────
+function ManagePanel({
+  allTasks,
+  overrides,
+  hidden,
+  onEdit,
+  onToggleHide,
+  onAdd,
+  onClose
+}) {
+  const [mSection, setMSection] = useState("maintenance");
+  const [query, setQuery] = useState("");
+  const list = allTasks.filter(t => t.section === mSection).filter(t => !query || t.name.toLowerCase().includes(query.toLowerCase()) || t.cat.toLowerCase().includes(query.toLowerCase()));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "#080b12",
+      zIndex: 55,
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#0d111a",
+      borderBottom: "1px solid #1a2232",
+      padding: "14px 16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: "#334155",
+      letterSpacing: 3,
+      textTransform: "uppercase",
+      marginBottom: 3
+    }
+  }, "Settings"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      letterSpacing: -0.5
+    }
+  }, "Manage Tasks")), /*#__PURE__*/React.createElement("button", {
+    className: "mode-btn",
+    onClick: onClose,
+    style: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      border: "1px solid #1e293b",
+      background: "#0d1117",
+      color: "#94a3b8",
+      fontSize: 14,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, "✕")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginBottom: 10
+    }
+  }, [{
+    id: "maintenance",
+    l: "🔧 Maintenance"
+  }, {
+    id: "chores",
+    l: "🧹 Chores"
+  }].map(s => /*#__PURE__*/React.createElement("button", {
+    key: s.id,
+    className: "sec-btn",
+    onClick: () => setMSection(s.id),
+    style: {
+      flex: 1,
+      padding: "9px 0",
+      fontSize: 12,
+      fontWeight: 700,
+      borderRadius: 8,
+      border: "1px solid " + (mSection === s.id ? "#3b82f6" : "#1a2232"),
+      background: mSection === s.id ? "#1e3a5f20" : "#0a0d16",
+      color: mSection === s.id ? "#e2e8f0" : "#475569"
+    }
+  }, s.l))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: "Search tasks…",
+    style: {
+      flex: 1,
+      background: "#0a0d16",
+      border: "1px solid #1e293b",
+      borderRadius: 8,
+      padding: "9px 12px",
+      color: "#e2e8f0",
+      fontSize: 13,
+      fontFamily: "inherit",
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "sec-btn",
+    onClick: onAdd,
+    style: {
+      padding: "0 16px",
+      borderRadius: 8,
+      border: "1px solid #1e3a5f",
+      background: "#0c1a2e",
+      color: "#60a5fa",
+      fontSize: 13,
+      fontWeight: 700,
+      whiteSpace: "nowrap"
+    }
+  }, "+ Add"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: "auto",
+      padding: "10px 14px",
+      maxWidth: 640,
+      margin: "0 auto",
+      width: "100%"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: "#334155",
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      padding: "4px 2px 10px"
+    }
+  }, list.length, " tasks · tap to edit"), list.map(t => {
+    const catColor = CAT[t.cat] || "#94a3b8";
+    const isHidden = hidden[t.id];
+    const isEdited = overrides[t.id];
+    return /*#__PURE__*/React.createElement("div", {
+      key: t.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "#0f1218",
+        border: "1px solid #1a2232",
+        borderLeft: "3px solid " + (isHidden ? "#3a0a0a" : catColor),
+        borderRadius: 10,
+        padding: "10px 12px",
+        marginBottom: 7,
+        opacity: isHidden ? 0.5 : 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0,
+        cursor: "pointer"
+      },
+      onClick: () => onEdit(t)
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        marginBottom: 3,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 8,
+        fontWeight: 700,
+        letterSpacing: 1,
+        textTransform: "uppercase",
+        color: catColor,
+        background: catColor + "18",
+        padding: "1px 5px",
+        borderRadius: 3
+      }
+    }, t.cat), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9,
+        color: "#475569"
+      }
+    }, freqLabel(t.freq)), t.custom && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 8,
+        color: "#5b6b7f",
+        textTransform: "uppercase",
+        letterSpacing: 1
+      }
+    }, "custom"), isEdited && !t.custom && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 8,
+        color: "#fbbf24",
+        textTransform: "uppercase",
+        letterSpacing: 1
+      }
+    }, "edited"), isHidden && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 8,
+        color: "#f87171",
+        textTransform: "uppercase",
+        letterSpacing: 1
+      }
+    }, "hidden")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: "#cbd5e1",
+        lineHeight: 1.4,
+        fontWeight: 500
+      }
+    }, t.name)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      className: "done-btn",
+      onClick: () => onEdit(t),
+      style: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        background: "#0d1117",
+        border: "1px solid #1e293b",
+        color: "#64748b",
+        fontSize: 13,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, "✎"), /*#__PURE__*/React.createElement("button", {
+      className: "done-btn",
+      onClick: () => onToggleHide(t.id),
+      style: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        background: "#0d1117",
+        border: "1px solid " + (isHidden ? "#1e3a5f" : "#3a1a1a"),
+        color: isHidden ? "#60a5fa" : "#7f4a4a",
+        fontSize: 13,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }
+    }, isHidden ? "↺" : "⊘")));
+  })));
+}
 // ── APP ───────────────────────────────────────────────────────────────────
 function App() {
   const today = useMemo(() => {
@@ -2070,31 +2300,33 @@ function App() {
   const [comps, setComps] = useState({});
   const [log, setLog] = useState([]);
   const [custom, setCustom] = useState([]);
+  const [overrides, setOverrides] = useState({});
+  const [hidden, setHidden] = useState({});
   const [showLog, setShowLog] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
-  const [logFilter, setLogFilter] = useState("all"); // 'all' | 'missed' | 'ontime'
-  const [section, setSection] = useState("maintenance"); // 'maintenance' | 'chores'
+  const [showManage, setShowManage] = useState(false);
+  const [editing, setEditing] = useState(null); // task object being edited, or "ADD"
+  const [logFilter, setLogFilter] = useState("all");
+  const [section, setSection] = useState("maintenance");
   const [tab, setTab] = useState("week");
   const [dayMode, setDayMode] = useState(null);
   const [flash, setFlash] = useState(null);
   const [loaded, setLoaded] = useState(false);
-  const [syncState, setSyncState] = useState("idle"); // idle | syncing | ok | offline
+  const [syncState, setSyncState] = useState("idle");
   const saveTimer = useRef(null);
-
-  // Load: localStorage immediately (fast paint), then Supabase (authoritative)
   useEffect(() => {
-    // 1. instant local load
     try {
-      const saved = localStorage.getItem("ht-v7");
-      if (saved) setComps(JSON.parse(saved));
-      const savedLog = localStorage.getItem("ht-log-v1");
-      if (savedLog) setLog(JSON.parse(savedLog));
-      const savedCustom = localStorage.getItem("ht-custom-v1");
-      if (savedCustom) setCustom(JSON.parse(savedCustom));
+      const s = localStorage.getItem("ht-v7");
+      if (s) setComps(JSON.parse(s));
+      const l = localStorage.getItem("ht-log-v1");
+      if (l) setLog(JSON.parse(l));
+      const c = localStorage.getItem("ht-custom-v1");
+      if (c) setCustom(JSON.parse(c));
+      const o = localStorage.getItem("ht-ovr-v1");
+      if (o) setOverrides(JSON.parse(o));
+      const h = localStorage.getItem("ht-hid-v1");
+      if (h) setHidden(JSON.parse(h));
     } catch {}
     setLoaded(true);
-
-    // 2. pull cloud state, override local if present
     (async () => {
       setSyncState("syncing");
       try {
@@ -2112,6 +2344,14 @@ function App() {
             setCustom(cloud.custom);
             localStorage.setItem("ht-custom-v1", JSON.stringify(cloud.custom));
           }
+          if (cloud.overrides) {
+            setOverrides(cloud.overrides);
+            localStorage.setItem("ht-ovr-v1", JSON.stringify(cloud.overrides));
+          }
+          if (cloud.hidden) {
+            setHidden(cloud.hidden);
+            localStorage.setItem("ht-hid-v1", JSON.stringify(cloud.hidden));
+          }
         }
         setSyncState("ok");
       } catch (e) {
@@ -2119,65 +2359,95 @@ function App() {
       }
     })();
   }, []);
-
-  // Debounced cloud push whenever state changes (after initial load)
-  const pushCloud = useCallback((nextComps, nextLog, nextCustom) => {
+  const pushCloud = useCallback(payload => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSyncState("syncing");
     saveTimer.current = setTimeout(async () => {
       try {
-        await sbSave({
-          comps: nextComps,
-          log: nextLog,
-          custom: nextCustom
-        });
+        await sbSave(payload);
         setSyncState("ok");
       } catch (e) {
         setSyncState("offline");
       }
     }, 800);
   }, []);
-  const nextDue = useCallback(task => {
-    // custom tasks store start date as ISO string; normalize to Date
-    if (typeof task.s === "string") task = Object.assign({}, task, {
-      s: new Date(task.s + "T00:00:00")
+
+  // central persist: write all five stores + push merged payload
+  const persist = useCallback(parts => {
+    const next = {
+      comps: parts.comps !== undefined ? parts.comps : comps,
+      log: parts.log !== undefined ? parts.log : log,
+      custom: parts.custom !== undefined ? parts.custom : custom,
+      overrides: parts.overrides !== undefined ? parts.overrides : overrides,
+      hidden: parts.hidden !== undefined ? parts.hidden : hidden
+    };
+    try {
+      localStorage.setItem("ht-v7", JSON.stringify(next.comps));
+      localStorage.setItem("ht-log-v1", JSON.stringify(next.log));
+      localStorage.setItem("ht-custom-v1", JSON.stringify(next.custom));
+      localStorage.setItem("ht-ovr-v1", JSON.stringify(next.overrides));
+      localStorage.setItem("ht-hid-v1", JSON.stringify(next.hidden));
+    } catch {}
+    pushCloud(next);
+  }, [comps, log, custom, overrides, hidden, pushCloud]);
+
+  // ── Build the effective task list: built-ins + overrides + custom, minus hidden ──
+  const applyOverride = base => {
+    const ov = overrides[base.id];
+    if (!ov) return base;
+    return Object.assign({}, base, ov, {
+      id: base.id,
+      section: base.section,
+      custom: base.custom
     });
-    if (task.daily) {
-      const last = comps[`${task.id}-last`];
-      let due = last ? addDays(new Date(last), task.freq) : addDays(task.s, task.off);
+  };
+  const allTasks = useMemo(() => {
+    const builtinsM = T.map(t => Object.assign({}, t, {
+      section: "maintenance"
+    }));
+    const builtinsC = CHORES.map(t => Object.assign({}, t, {
+      section: "chores"
+    }));
+    const customM = custom.filter(c => c.section === "maintenance").map(c => Object.assign({}, c, {
+      custom: true
+    }));
+    const customC = custom.filter(c => c.section === "chores").map(c => Object.assign({}, c, {
+      custom: true
+    }));
+    return builtinsM.concat(customM, builtinsC, customC).map(applyOverride);
+  }, [custom, overrides]);
+  const activeTasks = useMemo(() => allTasks.filter(t => t.section === section && !hidden[t.id]), [allTasks, section, hidden]);
+  const nextDue = useCallback(task => {
+    let s = task.s;
+    if (typeof s === "string") s = new Date(s + "T00:00:00");
+    const T2 = Object.assign({}, task, {
+      s
+    });
+    if (T2.daily) {
+      const last = comps[T2.id + "-last"];
+      let due = last ? addDays(new Date(last), T2.freq) : addDays(T2.s, T2.off || 0);
       if (due < today) due = new Date(today);
       return due;
     }
-    if (task.r === 'B') {
-      const last = comps[`${task.id}-last`];
-      const raw = last ? addDays(new Date(last), task.freq) : addDays(task.s, task.off);
-      return task.noSnap ? raw : snapOff(raw, task.fri);
+    if (T2.r === 'B') {
+      const last = comps[T2.id + "-last"];
+      const raw = last ? addDays(new Date(last), T2.freq) : addDays(T2.s, T2.off || 0);
+      return T2.noSnap ? raw : snapOff(raw, T2.fri);
     }
-    let raw = addDays(task.s, task.off);
-    for (let i = 0; i < 300; i++) {
-      const sched = task.noSnap ? raw : snapOff(raw, task.fri);
-      if (!comps[`${task.id}-${toKey(sched)}`]) return sched;
-      raw = addDays(raw, task.freq);
+    let raw = addDays(T2.s, T2.off || 0);
+    for (let i = 0; i < 400; i++) {
+      const sc = T2.noSnap ? raw : snapOff(raw, T2.fri);
+      if (!comps[T2.id + "-" + toKey(sc)]) return sc;
+      raw = addDays(raw, T2.freq);
     }
     return null;
   }, [comps, today]);
   const markDone = useCallback((task, dueDate) => {
     setFlash(task.id);
     setTimeout(() => setFlash(null), 700);
-    const next = {
-      ...comps
-    };
-    if (task.r === 'B' || task.daily) {
-      next[`${task.id}-last`] = toKey(today);
-    } else {
-      next[`${task.id}-${toKey(dueDate)}`] = true;
-    }
+    const next = Object.assign({}, comps);
+    if (task.r === 'B' || task.daily) next[task.id + "-last"] = toKey(today);else next[task.id + "-" + toKey(dueDate)] = true;
     setComps(next);
-    try {
-      localStorage.setItem("ht-v7", JSON.stringify(next));
-    } catch {}
-
-    // delta > 0 = completed late (missed) · delta === 0 = on time · delta < 0 = early
     const delta = diffDays(dueDate, today);
     const entry = {
       ts: Date.now(),
@@ -2191,40 +2461,85 @@ function App() {
     };
     const newLog = [entry, ...log].slice(0, 500);
     setLog(newLog);
-    try {
-      localStorage.setItem("ht-log-v1", JSON.stringify(newLog));
-    } catch {}
-    pushCloud(next, newLog, custom);
-  }, [comps, today, log, section, custom, pushCloud]);
-  const TASKS = useMemo(() => {
-    const base = section === "maintenance" ? T : CHORES;
-    const mine = custom.filter(c => c.section === section);
-    return base.concat(mine);
-  }, [section, custom]);
-  const addCustomTask = useCallback(t => {
-    const next = custom.concat([t]);
-    setCustom(next);
-    try {
-      localStorage.setItem("ht-custom-v1", JSON.stringify(next));
-    } catch {}
-    pushCloud(comps, log, next);
-    setShowAdd(false);
-  }, [custom, comps, log, pushCloud]);
-  const deleteCustomTask = useCallback(id => {
-    const next = custom.filter(c => c.id !== id);
-    setCustom(next);
-    try {
-      localStorage.setItem("ht-custom-v1", JSON.stringify(next));
-    } catch {}
-    pushCloud(comps, log, next);
-  }, [custom, comps, log, pushCloud]);
+    persist({
+      comps: next,
+      log: newLog
+    });
+  }, [comps, today, log, section, persist]);
+
+  // ── Manage operations ──
+  const saveTask = useCallback(patch => {
+    if (editing === "ADD") {
+      const t = Object.assign({}, patch, {
+        id: "u" + Date.now().toString(36),
+        off: 0,
+        section,
+        custom: true
+      });
+      const next = custom.concat([t]);
+      setCustom(next);
+      persist({
+        custom: next
+      });
+    } else if (editing && editing.custom) {
+      const next = custom.map(c => c.id === editing.id ? Object.assign({}, c, patch, {
+        id: c.id,
+        section: c.section,
+        custom: true
+      }) : c);
+      setCustom(next);
+      persist({
+        custom: next
+      });
+    } else if (editing) {
+      const next = Object.assign({}, overrides, {
+        [editing.id]: patch
+      });
+      setOverrides(next);
+      persist({
+        overrides: next
+      });
+    }
+    setEditing(null);
+  }, [editing, custom, overrides, section, persist]);
+  const resetTask = useCallback(() => {
+    if (editing && !editing.custom) {
+      const next = Object.assign({}, overrides);
+      delete next[editing.id];
+      setOverrides(next);
+      persist({
+        overrides: next
+      });
+    }
+    setEditing(null);
+  }, [editing, overrides, persist]);
+  const toggleHide = useCallback(id => {
+    const isCustom = custom.some(c => c.id === id);
+    if (isCustom && !hidden[id]) {
+      if (!confirm("Delete this custom task permanently?")) return;
+      const next = custom.filter(c => c.id !== id);
+      setCustom(next);
+      persist({
+        custom: next
+      });
+      return;
+    }
+    const next = Object.assign({}, hidden);
+    if (next[id]) delete next[id];else next[id] = true;
+    setHidden(next);
+    persist({
+      hidden: next
+    });
+  }, [custom, hidden, persist]);
   const exportData = useCallback(() => {
     const payload = {
-      version: 1,
+      version: 2,
       exported: new Date().toISOString(),
       comps,
       log,
-      custom
+      custom,
+      overrides,
+      hidden
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/json"
@@ -2237,36 +2552,35 @@ function App() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [comps, log, custom]);
+  }, [comps, log, custom, overrides, hidden]);
   const importData = useCallback(file => {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const data = JSON.parse(e.target.result);
-        if (data.comps) {
-          setComps(data.comps);
-          localStorage.setItem("ht-v7", JSON.stringify(data.comps));
-        }
-        if (data.log) {
-          setLog(data.log);
-          localStorage.setItem("ht-log-v1", JSON.stringify(data.log));
-        }
-        if (data.custom) {
-          setCustom(data.custom);
-          localStorage.setItem("ht-custom-v1", JSON.stringify(data.custom));
-        }
-        pushCloud(data.comps || comps, data.log || log, data.custom || custom);
+        const d = JSON.parse(e.target.result);
+        if (d.comps) setComps(d.comps);
+        if (d.log) setLog(d.log);
+        if (d.custom) setCustom(d.custom);
+        if (d.overrides) setOverrides(d.overrides);
+        if (d.hidden) setHidden(d.hidden);
+        persist({
+          comps: d.comps,
+          log: d.log,
+          custom: d.custom,
+          overrides: d.overrides || {},
+          hidden: d.hidden || {}
+        });
         alert("Backup imported successfully.");
       } catch (err) {
         alert("Could not read that file — make sure it's a Home Tracker backup JSON.");
       }
     };
     reader.readAsText(file);
-  }, [comps, log, custom, pushCloud]);
-  const allDues = useMemo(() => TASKS.map(t => ({
+  }, [persist]);
+  const allDues = useMemo(() => activeTasks.map(t => ({
     t,
     date: nextDue(t)
-  })).filter(x => x.date).sort((a, b) => a.date - b.date), [TASKS, nextDue]);
+  })).filter(x => x.date).sort((a, b) => a.date - b.date), [activeTasks, nextDue]);
   const overdueCount = useMemo(() => allDues.filter(x => diffDays(today, x.date) < 0).length, [allDues, today]);
   const missedCount = useMemo(() => log.filter(e => e.delta > 0).length, [log]);
   const filteredLog = useMemo(() => {
@@ -2284,7 +2598,7 @@ function App() {
   }, [allDues, tab, today]);
   const suggestions = useMemo(() => {
     if (!dayMode) return [];
-    const maxEf = dayMode === 'early' ? 2 : 3;
+    const maxEf = dayMode === "early" ? 2 : 3;
     const shown = new Set(tabItems.map(x => x.t.id));
     return allDues.filter(x => !shown.has(x.t.id) && x.t.ef <= maxEf && diffDays(today, x.date) >= 0 && diffDays(today, x.date) <= 60).slice(0, 6);
   }, [dayMode, allDues, tabItems, today]);
@@ -2424,22 +2738,20 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("button", {
     className: "mode-btn",
-    onClick: () => setShowAdd(true),
+    onClick: () => setShowManage(true),
     style: {
       width: 30,
       height: 30,
       borderRadius: 8,
-      border: "1px solid #1e3a5f",
-      background: "#0c1a2e",
+      border: "1px solid #1e293b",
+      background: "#0d1117",
+      color: "#94a3b8",
+      fontSize: 15,
       display: "flex",
       alignItems: "center",
-      justifyContent: "center",
-      fontSize: 18,
-      color: "#60a5fa",
-      fontWeight: 700,
-      lineHeight: 1
+      justifyContent: "center"
     }
-  }, "+"), /*#__PURE__*/React.createElement("button", {
+  }, "⚙"), /*#__PURE__*/React.createElement("button", {
     className: "mode-btn",
     onClick: () => setShowLog(true),
     style: {
@@ -2492,15 +2804,14 @@ function App() {
   }].map(m => /*#__PURE__*/React.createElement("button", {
     key: m.id,
     className: "mode-btn",
-    onClick: () => setDayMode(prev => prev === m.id ? null : m.id),
+    onClick: () => setDayMode(p => p === m.id ? null : m.id),
     style: {
       fontSize: 9,
       fontWeight: 600,
       letterSpacing: 0.5,
       padding: "4px 8px",
       borderRadius: 20,
-      border: "1px solid",
-      borderColor: dayMode === m.id ? "#3b82f6" : "#1e293b",
+      border: "1px solid " + (dayMode === m.id ? "#3b82f6" : "#1e293b"),
       color: dayMode === m.id ? "#93c5fd" : "#475569",
       background: dayMode === m.id ? "#1e3a5f20" : "transparent"
     }
@@ -2521,9 +2832,8 @@ function App() {
       fontWeight: 700,
       letterSpacing: 0.3,
       borderRadius: 8,
-      border: "1px solid",
-      borderColor: section === s.id ? s.color : "#1a2232",
-      background: section === s.id ? `${s.color}14` : "#0a0d16",
+      border: "1px solid " + (section === s.id ? s.color : "#1a2232"),
+      background: section === s.id ? s.color + "14" : "#0a0d16",
       color: section === s.id ? "#e2e8f0" : "#475569"
     }
   }, s.label))), /*#__PURE__*/React.createElement("div", {
@@ -2540,7 +2850,7 @@ function App() {
       fontWeight: 600,
       letterSpacing: 0.3,
       color: tab === tb.id ? "#e2e8f0" : "#475569",
-      borderBottom: `2px solid ${tab === tb.id ? "#3b82f6" : "transparent"}`,
+      borderBottom: "2px solid " + (tab === tb.id ? "#3b82f6" : "transparent"),
       display: "flex",
       alignItems: "center",
       gap: 4
@@ -2604,8 +2914,7 @@ function App() {
     today: today,
     flash: flash,
     onDone: markDone,
-    suggestion: false,
-    onDelete: t.custom ? deleteCustomTask : null
+    suggestion: false
   })), dayMode && suggestions.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 20
@@ -2631,7 +2940,7 @@ function App() {
       textTransform: "uppercase",
       whiteSpace: "nowrap"
     }
-  }, dayMode === 'early' ? '⚡ Off Early — get ahead' : '🗓 Full Day — bonus tasks'), /*#__PURE__*/React.createElement("div", {
+  }, dayMode === "early" ? "⚡ Off Early — get ahead" : "🗓 Full Day — bonus tasks"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       height: 1,
@@ -2641,7 +2950,7 @@ function App() {
     t,
     date
   }) => /*#__PURE__*/React.createElement(TaskCard, {
-    key: `sug-${t.id}`,
+    key: "sug-" + t.id,
     task: t,
     date: date,
     today: today,
@@ -2706,13 +3015,13 @@ function App() {
     }
   }, [{
     id: "all",
-    label: `All (${log.length})`
+    label: "All (" + log.length + ")"
   }, {
     id: "missed",
-    label: `⚠ Missed (${missedCount})`
+    label: "⚠ Missed (" + missedCount + ")"
   }, {
     id: "ontime",
-    label: `On time (${log.length - missedCount})`
+    label: "On time (" + (log.length - missedCount) + ")"
   }].map(f => /*#__PURE__*/React.createElement("button", {
     key: f.id,
     className: "sec-btn",
@@ -2722,10 +3031,8 @@ function App() {
       padding: "7px 0",
       fontSize: 10,
       fontWeight: 700,
-      letterSpacing: 0.3,
       borderRadius: 8,
-      border: "1px solid",
-      borderColor: logFilter === f.id ? f.id === "missed" ? "#ef4444" : "#3b82f6" : "#1a2232",
+      border: "1px solid " + (logFilter === f.id ? f.id === "missed" ? "#ef4444" : "#3b82f6" : "#1a2232"),
       background: logFilter === f.id ? f.id === "missed" ? "#7f1d1d20" : "#1e3a5f20" : "#0a0d16",
       color: logFilter === f.id ? "#e2e8f0" : "#475569"
     }
@@ -2743,7 +3050,6 @@ function App() {
       padding: "8px 0",
       fontSize: 10,
       fontWeight: 700,
-      letterSpacing: 0.5,
       borderRadius: 8,
       border: "1px solid #1e3a5f",
       background: "#0c1a2e",
@@ -2756,7 +3062,6 @@ function App() {
       padding: "8px 0",
       fontSize: 10,
       fontWeight: 700,
-      letterSpacing: 0.5,
       borderRadius: 8,
       border: "1px solid #1a2232",
       background: "#0a0d16",
@@ -2774,15 +3079,7 @@ function App() {
       if (e.target.files[0]) importData(e.target.files[0]);
       e.target.value = "";
     }
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      color: "#334155",
-      marginTop: 7,
-      lineHeight: 1.4,
-      letterSpacing: 0.3
-    }
-  }, "Backup saves custom tasks, completions & log to a file. Import on another device to transfer.")), /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflowY: "auto",
@@ -2806,18 +3103,16 @@ function App() {
     style: {
       fontSize: 13
     }
-  }, log.length === 0 ? "No history yet — completed tasks will appear here with full date details." : "Nothing in this filter.")), filteredLog.map(e => {
+  }, log.length === 0 ? "No history yet — completed tasks appear here." : "Nothing in this filter.")), filteredLog.map(e => {
     const catColor = CAT[e.cat] || "#94a3b8";
-    const isMissed = e.delta > 0;
-    const isEarly = e.delta < 0;
-    const schedD = new Date(e.scheduled);
-    const compD = new Date(e.completed);
+    const isMissed = e.delta > 0,
+      isEarly = e.delta < 0;
     return /*#__PURE__*/React.createElement("div", {
       key: e.ts,
       style: {
         background: "#0f1218",
-        border: `1px solid ${isMissed ? "#3a0a0a" : "#1a2232"}`,
-        borderLeft: `3px solid ${isMissed ? "#ef4444" : isEarly ? "#34d399" : "#22c55e"}`,
+        border: "1px solid " + (isMissed ? "#3a0a0a" : "#1a2232"),
+        borderLeft: "3px solid " + (isMissed ? "#ef4444" : isEarly ? "#34d399" : "#22c55e"),
         borderRadius: 10,
         padding: "10px 12px",
         marginBottom: 8
@@ -2841,7 +3136,7 @@ function App() {
         letterSpacing: 1.5,
         textTransform: "uppercase",
         color: catColor,
-        background: `${catColor}18`,
+        background: catColor + "18",
         padding: "2px 6px",
         borderRadius: 3
       }
@@ -2881,29 +3176,35 @@ function App() {
         fontSize: 10,
         color: "#475569"
       }
-    }, "Scheduled ", fmtDate(schedD), " → Completed ", fmtDate(compD)));
-  }))), showAdd && /*#__PURE__*/React.createElement(AddTaskForm, {
-    section: section,
-    onSave: addCustomTask,
-    onClose: () => setShowAdd(false)
+    }, "Scheduled ", fmtDate(new Date(e.scheduled)), " → Completed ", fmtDate(new Date(e.completed))));
+  }))), showManage && /*#__PURE__*/React.createElement(ManagePanel, {
+    allTasks: allTasks,
+    overrides: overrides,
+    hidden: hidden,
+    onEdit: t => setEditing(t),
+    onToggleHide: toggleHide,
+    onAdd: () => {
+      setSection(section);
+      setEditing("ADD");
+    },
+    onClose: () => setShowManage(false)
+  }), editing && /*#__PURE__*/React.createElement(EditTaskForm, {
+    section: editing === "ADD" ? section : editing.section,
+    existing: editing === "ADD" ? null : editing,
+    isBuiltin: editing !== "ADD" && !editing.custom,
+    onSave: saveTask,
+    onReset: resetTask,
+    onClose: () => setEditing(null)
   }));
 }
 function mountApp() {
   var rootEl = document.getElementById("root");
-  if (!rootEl) {
-    rootEl = document.createElement("div");
-    rootEl.id = "root";
-    (document.body || document.documentElement).appendChild(rootEl);
-  }
+  if (!rootEl) { rootEl = document.createElement("div"); rootEl.id = "root"; (document.body || document.documentElement).appendChild(rootEl); }
   if (rootEl.__mounted) { return; }
   rootEl.__mounted = true;
   ReactDOM.createRoot(rootEl).render(/*#__PURE__*/React.createElement(App, null));
 }
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", mountApp);
-} else {
-  mountApp();
-}
+if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", mountApp); } else { mountApp(); }
 })();
   </script>
 </body>
