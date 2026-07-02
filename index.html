@@ -2175,7 +2175,7 @@ function ManagePanel({
     }
   }), /*#__PURE__*/React.createElement("button", {
     className: "sec-btn",
-    onClick: onAdd,
+    onClick: () => onAdd(mSection),
     style: {
       padding: "0 16px",
       borderRadius: 8,
@@ -2334,6 +2334,7 @@ function App() {
   const [showLog, setShowLog] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const [editing, setEditing] = useState(null); // task object being edited, or "ADD"
+  const [addSection, setAddSection] = useState("maintenance"); // target section for new task
   const [logFilter, setLogFilter] = useState("all");
   const [section, setSection] = useState("maintenance");
   const [tab, setTab] = useState("week");
@@ -2502,7 +2503,7 @@ function App() {
       const t = Object.assign({}, patch, {
         id: "u" + Date.now().toString(36),
         off: 0,
-        section,
+        section: addSection,
         custom: true
       });
       const next = custom.concat([t]);
@@ -2530,7 +2531,7 @@ function App() {
       });
     }
     setEditing(null);
-  }, [editing, custom, overrides, section, persist]);
+  }, [editing, custom, overrides, section, addSection, persist]);
   const resetTask = useCallback(() => {
     if (editing && !editing.custom) {
       const next = Object.assign({}, overrides);
@@ -3212,13 +3213,13 @@ function App() {
     hidden: hidden,
     onEdit: t => setEditing(t),
     onToggleHide: toggleHide,
-    onAdd: () => {
-      setSection(section);
+    onAdd: sec => {
+      setAddSection(sec);
       setEditing("ADD");
     },
     onClose: () => setShowManage(false)
   }), editing && /*#__PURE__*/React.createElement(EditTaskForm, {
-    section: editing === "ADD" ? section : editing.section,
+    section: editing === "ADD" ? addSection : editing.section,
     existing: editing === "ADD" ? null : editing,
     isBuiltin: editing !== "ADD" && !editing.custom,
     onSave: saveTask,
