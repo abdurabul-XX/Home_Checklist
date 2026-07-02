@@ -1691,6 +1691,7 @@ function EditTaskForm({
   const [buy, setBuy] = useState(existing ? String(existing.buy || 0) : "0");
   const [bn, setBn] = useState(existing && existing.bn ? existing.bn : "");
   const [daily, setDaily] = useState(existing ? !!existing.daily : false);
+  const [snap, setSnap] = useState(existing ? !existing.noSnap : true);
   const catKeys = Object.keys(CAT);
   const canSave = name.trim().length > 0;
   const editingTitle = existing ? isBuiltin ? "Edit task" : "Edit custom task" : "Add task";
@@ -1703,6 +1704,7 @@ function EditTaskForm({
       detail: detail.trim() || undefined,
       freq,
       s: start,
+      off: 0,
       cat,
       r: reset,
       buy: parseInt(buy || "0", 10),
@@ -1710,6 +1712,7 @@ function EditTaskForm({
       ef: parseInt(ef, 10)
     };
     if (isDaily) patch.daily = true;
+    if (!snap && !isDaily) patch.noSnap = true;
     onSave(patch);
   };
   const lbl = {
@@ -1974,13 +1977,39 @@ function EditTaskForm({
       fontSize: 12,
       color: "#94a3b8",
       cursor: "pointer",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: snap,
+    onChange: e => setSnap(e.target.checked),
+    disabled: daily
+  }), " Snap to days off (Thu/Fri/Sat)"), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      fontSize: 12,
+      color: "#94a3b8",
+      cursor: "pointer",
       marginBottom: 16
     }
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
     checked: daily,
     onChange: e => setDaily(e.target.checked)
-  }), " Show every day (daily task)"), isBuiltin && onReset && /*#__PURE__*/React.createElement("button", {
+  }), " Show every day (daily task)"), !snap && !daily && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#5b6b7f",
+      background: "#0c1423",
+      border: "1px solid #1a2738",
+      borderRadius: 8,
+      padding: "9px 11px",
+      marginBottom: 16,
+      lineHeight: 1.5
+    }
+  }, "Snap off: this task repeats on the exact weekday of its start date, ignoring your days off."), isBuiltin && onReset && /*#__PURE__*/React.createElement("button", {
     className: "sec-btn",
     onClick: onReset,
     style: {
