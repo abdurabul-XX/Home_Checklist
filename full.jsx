@@ -509,19 +509,33 @@
 
       // ── Manage operations ──
       const saveTask = useCallback((patch) => {
+        // When a start date is set via edit, clear any stale completion anchor
+        // so the new start date re-anchors the schedule (Option A behavior).
+        const clearLastFor = (id) => {
+          if (comps[id+"-last"] !== undefined) {
+            const nc = Object.assign({}, comps); delete nc[id+"-last"]; return nc;
+          }
+          return null;
+        };
         if (editing === "ADD") {
           const t = Object.assign({}, patch, { id:"u"+Date.now().toString(36), off:0, section:addSection, custom:true });
           const next = custom.concat([t]);
           setCustom(next); persist({ custom:next });
         } else if (editing && editing.custom) {
           const next = custom.map(c => c.id===editing.id ? Object.assign({}, c, patch, {id:c.id, section:c.section, custom:true}) : c);
-          setCustom(next); persist({ custom:next });
+          setCustom(next);
+          const nc = clearLastFor(editing.id);
+          if (nc) { setComps(nc); persist({ custom:next, comps:nc }); }
+          else persist({ custom:next });
         } else if (editing) {
           const next = Object.assign({}, overrides, { [editing.id]: patch });
-          setOverrides(next); persist({ overrides:next });
+          setOverrides(next);
+          const nc = clearLastFor(editing.id);
+          if (nc) { setComps(nc); persist({ overrides:next, comps:nc }); }
+          else persist({ overrides:next });
         }
         setEditing(null);
-      }, [editing, custom, overrides, section, addSection, persist]);
+      }, [editing, custom, overrides, comps, section, addSection, persist]);
 
       const resetTask = useCallback(() => {
         if (editing && !editing.custom) {
